@@ -6,7 +6,8 @@ Database connector
 """
 
 import os
-
+import logging
+from contextlib import contextmanager
 import mysql.connector
 from mysql.connector import Error
 
@@ -14,6 +15,13 @@ from dotenv import load_dotenv
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
 load_dotenv(dotenv_path)
+
+required_vars = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"]
+for var in required_vars:
+    if not os.getenv(var):
+        raise EnvironmentError(f"Missing: {var}")
+    
+logger = logging.getLogger(__name__)
 
 def get_connection():
     """
