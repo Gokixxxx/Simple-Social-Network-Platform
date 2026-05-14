@@ -23,39 +23,44 @@ for var in required_vars:
     
 logger = logging.getLogger(__name__)
 
-def get_connection():
+def create_connection():
     """
-    获取数据库连接
-    返回: connection对象 或 None（失败时）
+    create database connection
+
+    Return: 
+        - connection object[success] or None[failure]
     """
     pass
 
-def execute_query(query, params=None, fetch='all'):
+def close_connection(connection):
     """
-    执行查询语句（SELECT）
-    参数:
-        query: SQL查询语句
-        params: 参数元组（防止SQL注入）
-        fetch: 'all'（返回所有结果）或 'one'（返回单条）
-    返回: 查询结果列表 或 None
+    close database connection
+
+    Args: 
+        - connection: connection object
     """
     pass
 
-def execute_update(query, params=None):
+def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
     """
-    执行更新语句（INSERT/UPDATE/DELETE）
-    参数:
-        query: SQL更新语句
-        params: 参数元组
-    返回: {'success': True/False, 'message': '...', 'last_id': int}
+    execute SELECT operation
+
+    Args:
+        - query: the SELECT clause, using '%s' as a data placeholder
+        - params: the data corresponding to those %s placeholders mentioned above
+    Returns:
+        - a tuple list, representing the result of SELECT clause 
     """
     pass
 
-def execute_transaction(queries):
+def execute_update(query: str, params: tuple = None) -> int:
     """
-    执行事务（多个SQL语句）
-    参数:
-        queries: 列表，每个元素是 (query, params) 元组
-    返回: {'success': True/False, 'message': '...'}
+    execute UPDATE/INSERT/DELETE operation
+    
+    Args:
+        - query: the UPDATE/INSERT/DELETE clause, using '%s' as a data placeholder
+        - params: the data corresponding to those %s placeholders mentioned above
+    Returns:
+        - an integer, representing the line number of affected rows[success] or -1[failure]
     """
     pass
