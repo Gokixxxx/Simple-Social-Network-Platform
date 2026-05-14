@@ -20,4 +20,4 @@ __pycache__/
 *.sqlite3
 
 # Logs and databases
-*.log
+*.log".env" 

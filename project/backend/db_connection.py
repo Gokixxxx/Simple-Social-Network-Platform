@@ -5,17 +5,15 @@
 Database connector
 """
 
+import os
+
 import mysql.connector
 from mysql.connector import Error
 
-# 数据库配置
-DB_CONFIG = {
-    'host': 'localhost',
-    'database': 'social_network',
-    'user': 'root',
-    'password': 'your_password',
-    'charset': 'utf8mb4'
-}
+from dotenv import load_dotenv
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+load_dotenv(dotenv_path)
 
 def get_connection():
     """
