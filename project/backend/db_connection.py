@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def create_connection():
     """
-    create database connection
+    Internal function to create a database connection.
 
     Return: 
         - connection object[success] or None[failure]
@@ -51,7 +51,7 @@ def create_connection():
 
 def close_connection(connection):
     """
-    close database connection
+    Internal function to close a database connection.
 
     Args: 
         - connection: connection object
@@ -66,7 +66,7 @@ def close_connection(connection):
 
 def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
     """
-    execute SELECT operation
+    Manager call: executing SELECT operation.
 
     Args:
         - query: the SELECT clause, using '%s' as a data placeholder
@@ -97,7 +97,7 @@ def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
 
 def execute_update(query: str, params: tuple = None) -> int:
     """
-    execute UPDATE/INSERT/DELETE operation
+    Manager call: executing UPDATE/INSERT/DELETE operation.
     
     Args:
         - query: the UPDATE/INSERT/DELETE clause, using '%s' as a data placeholder
