@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from db_connection import execute_update
+from backend.db_connection import execute_update
 
 def create_tables():
 
-    # TODO: 未完成！这个建表只是一个示例
+    # TODO: 未完成！这个建表和触发器设计只是一个示例（不一定对）
     raise NotImplementedError("TODO: This funciton has not yet been completed.")
 
     execute_update("""
@@ -17,10 +17,18 @@ def create_tables():
         )
     """)
 
+    execute_update("""
+        CREATE TRIGGER IF NOT EXISTS after_order_insert
+        AFTER INSERT ON orders
+        FOR EACH ROW
+        BEGIN
+            INSERT INTO audit_log (message)
+            VALUES (CONCAT('New order: ', NEW.id, ' for user ', NEW.user_id));
+        END;
+    """)
+
    
     
-    
-
 if __name__ == "__main__":
     create_tables()
     print("Creat table successfully.")
