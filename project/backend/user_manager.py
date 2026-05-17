@@ -5,21 +5,39 @@
 用户管理模块
 """
 
+import logging
 from .db_connection import execute_query, execute_update, execute_transaction
+
+logger = logging.getLogger(__name__)
 
 def register_user(username, password):
     """
     用户注册
     返回: {'success': True/False, 'message': '...', 'user_id': int}
     """
+    # --- Step 1: Check for existing username ---
+    check_query = "SELECT user_id FROM users WHERE username = %s" 
+    existing_user = execute_query(check_query, (username,))
+
+    if existing_user is None:
+        # Database query failed
+        logger.error("Failed to check for existing username during registration.")
+        return {"success": False, "message": "Database error."}
+
+    if len(existing_user) > 0:
+        # Username is already taken
+        logger.info(f"Registration failed: Username '{username}' is already taken.")
+        return {"success": False, "message": "Username already exists."}
+
+    # --- Step 2: Insert the new user ---
     query = "INSERT INTO users (username, password) VALUES (%s, %s)"
-    result = execute_update(query, (username, password))    # 需要注意调用db_connection.py中的函数时，参数在SQL语句中应先用%s占位，在之后附上tuple依次传入参数值
-    if result > 0:
-        # ...处理成功逻辑...
-        pass
-    else:
-        # ...处理失败逻辑...
-        pass
+    result = execute_update(query, (username, password))    
+    if result > 0:  # 成功
+        logger.info(f"New user registered: {username}")
+        return {"success": True, "message": "User registered successfully."}
+    else:           # 失败
+        logger.error(f"Failed to register user: {username}")
+        return {"success": False, "message": "Failed to register user. Please try again."}
 
 def login_user(username, password):
     """

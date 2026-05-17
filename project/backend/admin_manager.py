@@ -5,7 +5,10 @@
 管理员管理模块
 """
 
+import logging
 from .db_connection import execute_query, execute_update, execute_transaction
+
+logger = logging.getLogger(__name__)
 
 def login_admin(admin_username, password):
     """

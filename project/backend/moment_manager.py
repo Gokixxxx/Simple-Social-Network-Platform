@@ -5,7 +5,10 @@
 朋友圈管理模块
 """
 
+import logging
 from .db_connection import execute_query, execute_update, execute_transaction
+
+logger = logging.getLogger(__name__)
 
 def post_moment(user_id, content):
     """
