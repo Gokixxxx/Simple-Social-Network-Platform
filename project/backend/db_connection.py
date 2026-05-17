@@ -9,7 +9,8 @@ import os
 import logging
 from contextlib import contextmanager
 import mysql.connector
-from mysql.connector import Error
+from typing import Optional, List, Tuple, Any
+from mysql.connector import connect, Error as MySQLError, MySQLConnection
 
 from dotenv import load_dotenv
 
@@ -45,7 +46,7 @@ def create_connection():
             logger.info("Unknown Error while connecting to MySQL.")
             return None
         
-    except Error as e:
+    except MySQLError as e:
         logger.error(f"Error while connecting to MySQL: {e}")
         return None
 
@@ -61,7 +62,7 @@ def close_connection(connection):
             connection.close()
             logger.info("MySQL connection is closed.")
 
-        except Error as e:
+        except MySQLError as e:
             logger.error(f"Error while closing the connection: {e}")
 
 def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
@@ -72,7 +73,7 @@ def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
         - query: the SELECT clause, using '%s' as a data placeholder
         - params: the data corresponding to those %s placeholders mentioned above
     Returns:
-        - a tuple list, representing the result of SELECT clause 
+        - a tuple list, representing the result of SELECT clause or None for failure
     """
     connection = create_connection()
     if not connection:
@@ -86,7 +87,7 @@ def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
         logger.debug(f"Executed query: {query}, with params: {params}. Fetched {len(result)} rows.")
         return result
     
-    except Error as e:
+    except MySQLError as e:
         logger.error(f"Error while executing query: {query}, with params: {params}. Error: {e}")
         return None
     
@@ -118,7 +119,7 @@ def execute_update(query: str, params: tuple = None) -> int:
         logger.debug(f"Executed update: {query}, with params: {params}. Affected {affected_rows} rows.")
         return affected_rows
     
-    except Error as e:
+    except MySQLError as e:
         logger.error(f"Error while executing update: {query}, with params: {params}. Error: {e}")
         connection.rollback()  # Rollback in case of error
         return -1
@@ -127,3 +128,120 @@ def execute_update(query: str, params: tuple = None) -> int:
         if cursor:
             cursor.close()
         close_connection(connection)
+
+def begin_transaction() -> Optional[MySQLConnection]:
+    """
+    Starts a new database transaction.
+    
+    Returns:
+        - connection object[success] or None[failure]
+        
+    Usage:
+        conn = begin_transaction()
+        if conn:
+            try:
+                execute_update_in_transaction(conn, "INSERT ...", params)
+                execute_update_in_transaction(conn, "UPDATE ...", params)
+                commit_transaction(conn)
+            except Exception as e:
+                rollback_transaction(conn)
+                raise e
+    """
+    conn = create_connection()
+    if conn:
+        conn.autocommit = False # auto commit is banned
+        logger.debug("Transaction started.")
+    return conn
+
+def commit_transaction(connection: MySQLConnection) -> bool:
+    """
+    Commits the current transaction.
+
+    Args:
+        - connection: the connection to commit
+    Returns:
+        - a bool variable to describe whether the commit operation was successful or not.
+
+    """
+    try:
+        connection.commit()
+        logger.debug("Transaction committed.")
+        return True
+    
+    except MySQLError as e:
+        logger.error(f"Error committing transaction: {e}")
+        return False
+    
+    finally:
+        if connection.is_connected():
+            connection.close()
+            logger.debug("Database connection closed after commit.")
+
+def rollback_transaction(connection: MySQLConnection) -> bool:
+    """
+    Rolls back the current transaction.
+
+    Args:
+        - connection: the connection to rollback
+    Returns:
+        - a bool variable to describe whether the rollback operation was successful or not.
+    """
+    try:
+        connection.rollback()
+        logger.debug("Transaction rolled back.")
+        return True
+    except MySQLError as e:
+        logger.error(f"Error rolling back transaction: {e}")
+        return False
+    finally:
+        if connection.is_connected():
+            connection.close()
+            logger.debug("Database connection closed after rollback.")
+
+def execute_query_in_transaction(connection: MySQLConnection, query: str, params: Optional[Tuple] = None) -> list[tuple] | None:
+    """
+    Executes a SELECT query within an existing transaction.
+
+    Args:
+        - connection: the connection in transaction
+        - query: the SELECT clause, using '%s' as a data placeholder
+        - params: the data corresponding to those %s placeholders mentioned above
+    Returns:
+        - a tuple list, representing the result of SELECT clause or None for failure
+
+    """
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute(query, params or ())
+        result = cursor.fetchall()
+        return result
+    except MySQLError as e:
+        logger.error(f"Query execution error in transaction: {e}")
+        return None
+    finally:
+        if cursor:
+            cursor.close()
+
+def execute_update_in_transaction(connection: MySQLConnection, query: str, params: Optional[Tuple] = None) -> int:
+    """
+    Executes an INSERT, UPDATE, or DELETE statement within an existing transaction.
+
+    Args:
+        - connection: the connection in transaction
+        - query: the INSERT, UPDATE, or DELETE clause, using '%s' as a data placeholder
+        - params: the data corresponding to those %s placeholders mentioned above
+    Returns:
+        - an integer, representing the line number of affected rows[success] or -1[failure]
+    """
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute(query, params or ())
+        return cursor.rowcount
+    except MySQLError as e:
+        logger.error(f"Update execution error in transaction: {e}")
+        return 0
+    finally:
+        if cursor:
+            cursor.close()
