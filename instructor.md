@@ -79,7 +79,7 @@ project/
 1. 朋友圈被删除时，其对应的评论也应该被删除。
 2. 用户被注销时，其对应的朋友圈和评论也应该被删除。（该条可能可以通过外键实现）
 
-
+内置函数：
 
 python与数据库的连接代码：`create_connection`创建连接，`close_connection`关闭连接，`execute_query`执行SELECT操作，`execute_update`执行增删改操作。
 
