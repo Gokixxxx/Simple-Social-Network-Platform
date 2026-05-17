@@ -12,7 +12,14 @@ def register_user(username, password):
     用户注册
     返回: {'success': True/False, 'message': '...', 'user_id': int}
     """
-    pass
+    query = "INSERT INTO users (username, password) VALUES (%s, %s)"
+    result = execute_update(query, (username, password))    # 需要注意调用db_connection.py中的函数时，参数在SQL语句中应先用%s占位，在之后附上tuple依次传入参数值
+    if result > 0:
+        # ...处理成功逻辑...
+        pass
+    else:
+        # ...处理失败逻辑...
+        pass
 
 def login_user(username, password):
     """
