@@ -42,9 +42,6 @@ def create_connection():
         if connection.is_connected():
             logger.info("Successfully connected to the database.")
             return connection
-        else:
-            logger.info("Unknown Error while connecting to MySQL.")
-            return None
         
     except MySQLError as e:
         logger.error(f"Error while connecting to MySQL: {e}")
@@ -241,7 +238,7 @@ def execute_update_in_transaction(connection: MySQLConnection, query: str, param
         return cursor.rowcount
     except MySQLError as e:
         logger.error(f"Update execution error in transaction: {e}")
-        return 0
+        return -1
     finally:
         if cursor:
             cursor.close()

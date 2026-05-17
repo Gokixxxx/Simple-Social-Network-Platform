@@ -85,7 +85,9 @@ project/
 
 python与数据库的连接代码：`create_connection`创建连接，`close_connection`关闭连接，`execute_query`执行SELECT操作，`execute_update`执行增删改操作。
 
-`manager`只应调用两个`execute`函数，而与`connection`操作解耦。注意调用时为了防止注入攻击，参数需要先用`%s`占位，之后再附上一个tuple依次给参数传值。举个例子：查是否存在某个`user_id`的用户时，应写为`execute_query("SELECT user_id FROM users WHERE username = %s", ('Monkey',))`，而不能写为`execute_query("SELECT user_id FROM users WHERE username = 'Monkey'")`，后者有注入风险。
+如果不涉及事务操作，`manager`只应调用两个`execute`函数，而与`connection`操作解耦。注意调用时为了防止注入攻击，参数需要先用`%s`占位，之后再附上一个tuple依次给参数传值。举个例子：查是否存在某个`user_id`的用户时，应写为`execute_query("SELECT user_id FROM users WHERE username = %s", ('Monkey',))`，而不能写为`execute_query("SELECT user_id FROM users WHERE username = 'Monkey'")`，后者有注入风险。
+
+如果需要事务操作，使用函数`begin_transaction`, `commit_transaction`, `rollback_transaction`管理事务的生命周期，使用`execute_query_in_transaction`函数执行事务中的SELECT语句，使用`execute_update_in_transaction`函数执行事务中的UPDATE或INSERT或DELETE语句。
 
 建表：
 
