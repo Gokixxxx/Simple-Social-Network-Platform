@@ -92,8 +92,8 @@ class mySocialNetwork:
     def show_login_menu(self):
         """show login/register menu"""
         print("\n Welcome, please enter an integer to select an operation. ")
-        print("  1. user login")
-        print("  2. user register")
+        print("  1. user register")
+        print("  2. user login")
         print("  3. admin login")
         print("  0. exit")
         
