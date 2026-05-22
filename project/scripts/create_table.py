@@ -1,34 +1,119 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from backend.db_connection import execute_update
 
 def create_tables():
 
-    # TODO: 未完成！这个建表和触发器设计只是一个示例（不一定对）
-    raise NotImplementedError("TODO: This funciton has not yet been completed.")
-
-    execute_update("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50) NOT NULL UNIQUE,
-            password_hash VARCHAR(255) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    from backend.db_connection import execute_transaction
+    # Define all SQL operations in chronological order
+    statements = [
+        # 1. Drop existing tables/views/triggers (in reverse order of dependencies)
+        "DROP VIEW IF EXISTS UserProfileView",
+        "DROP TRIGGER IF EXISTS before_friendship_insert",  # 清理旧触发器
+        "DROP TABLE IF EXISTS comments",
+        "DROP TABLE IF EXISTS moments",
+        "DROP TABLE IF EXISTS friendships",
+        "DROP TABLE IF EXISTS admins",
+        "DROP TABLE IF EXISTS users",
+        
+        # 2. Create users table
+        """
+        CREATE TABLE users (
+            user_id INT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            name VARCHAR(50),
+            gender ENUM('M', 'F', 'Other'),
+            birth_date DATE
         )
-    """)
-
-    execute_update("""
-        CREATE TRIGGER IF NOT EXISTS after_order_insert
-        AFTER INSERT ON orders
+        """,
+        
+        # 3. Create admins table
+        """
+        CREATE TABLE admins (
+            admin_id INT PRIMARY KEY AUTO_INCREMENT,
+            admin_username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            name VARCHAR(50),
+            gender ENUM('M', 'F', 'Other'),
+            birth_date DATE
+        )
+        """,
+        
+        # 4. Create friendships table (with Cascade Delete)
+        """
+        CREATE TABLE friendships (
+            user_id INT,
+            friend_id INT,
+            group_name VARCHAR(50) DEFAULT '默认分组',
+            PRIMARY KEY (user_id, friend_id),
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+            FOREIGN KEY (friend_id) REFERENCES users(user_id) ON DELETE CASCADE
+        )
+        """,
+        
+        # 【触发器】防止自己加自己好友
+        """
+        CREATE TRIGGER before_friendship_insert
+        BEFORE INSERT ON friendships
         FOR EACH ROW
         BEGIN
-            INSERT INTO audit_log (message)
-            VALUES (CONCAT('New order: ', NEW.id, ' for user ', NEW.user_id));
-        END;
-    """)
-
-   
+            IF NEW.user_id = NEW.friend_id THEN
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'You cannot add yourself as a friend.';
+            END IF;
+        END
+        """,
+        
+        # 5. Create moments table (with Cascade Delete)
+        """
+        CREATE TABLE moments (
+            moment_id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT,
+            content VARCHAR(500) NOT NULL,
+            last_update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+        )
+        """,
+        
+        # 6. Create comments table (with Double Cascade Delete)
+        """
+        CREATE TABLE comments (
+            comment_id INT PRIMARY KEY AUTO_INCREMENT,
+            moment_id INT,
+            user_id INT,
+            content VARCHAR(255) NOT NULL,
+            comment_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (moment_id) REFERENCES moments(moment_id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+        )
+        """,
+        
+        # 7. Create view to calculate age dynamically
+        """
+        CREATE VIEW UserProfileView AS
+        SELECT 
+            user_id, username, name, gender, birth_date,
+            TIMESTAMPDIFF(YEAR, birth_date, CURDATE()) AS age
+        FROM users
+        """,
+        
+        # 8. Initialize default admin user
+        "INSERT INTO admins (admin_username, password, name) VALUES ('admin', 'admin123', 'Super Admin')"
+    ]
     
+    # Map statements to the tuple format required by execute_transaction: (sql, params)
+    operations = [(sql, None) for sql in statements]
+    
+    print("Initializing database: creating tables, views, triggers and default data...")
+    
+    # Execute all operations within a single transaction
+    success = execute_transaction(operations)
+    
+    if success:
+        print("Create table and triggers successfully.")
+    else:
+        print("Database initialization failed. Transaction has been rolled back safely.")
+
 if __name__ == "__main__":
     create_tables()
-    print("Creat table successfully.")
