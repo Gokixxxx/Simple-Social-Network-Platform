@@ -14,7 +14,7 @@ from mysql.connector import connect, Error as MySQLError, MySQLConnection
 
 from dotenv import load_dotenv
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 
 required_vars = ["DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD", "DB_NAME"]
@@ -62,15 +62,10 @@ def close_connection(connection):
         except MySQLError as e:
             logger.error(f"Error while closing the connection: {e}")
 
-def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
+def execute_query(query: str, params: tuple = None) -> list[dict] | None: # 提示: 返回类型注解可改为 list[dict]
     """
     Manager call: executing SELECT operation.
-
-    Args:
-        - query: the SELECT clause, using '%s' as a data placeholder
-        - params: the data corresponding to those %s placeholders mentioned above
-    Returns:
-        - a tuple list, representing the result of SELECT clause or None for failure
+    ...
     """
     connection = create_connection()
     if not connection:
@@ -78,7 +73,8 @@ def execute_query(query: str, params: tuple = None) -> list[tuple] | None:
 
     cursor = None
     try:
-        cursor = connection.cursor()
+        cursor = connection.cursor(dictionary=True) 
+        
         cursor.execute(query, params)
         result = cursor.fetchall()
         logger.debug(f"Executed query: {query}, with params: {params}. Fetched {len(result)} rows.")
@@ -194,6 +190,32 @@ def rollback_transaction(connection: MySQLConnection) -> bool:
         if connection.is_connected():
             connection.close()
             logger.debug("Database connection closed after rollback.")
+# ====================  execute_transaction 函数 ====================
+def execute_transaction(operations: List[Tuple[str, Optional[Tuple]]]) -> bool:
+    """
+    批量执行多个SQL操作的事务函数（兼容原有代码调用）
+    Args:
+        operations: 操作列表，每个元素为 (sql语句, 参数元组)
+    Returns:
+        事务执行成功返回True，失败返回False并自动回滚
+    """
+    conn = begin_transaction()
+    if not conn:
+        logger.error("Failed to start transaction")
+        return False
+    
+    try:
+        for sql, params in operations:
+            result = execute_update_in_transaction(conn, sql, params)
+            if result == -1:
+                raise Exception(f"SQL execution failed: {sql[:100]}")
+        
+        return commit_transaction(conn)
+    
+    except Exception as e:
+        logger.error(f"Transaction failed: {str(e)}")
+        rollback_transaction(conn)
+        return False
 
 def execute_query_in_transaction(connection: MySQLConnection, query: str, params: Optional[Tuple] = None) -> list[tuple] | None:
     """
@@ -209,7 +231,7 @@ def execute_query_in_transaction(connection: MySQLConnection, query: str, params
     """
     cursor = None
     try:
-        cursor = connection.cursor()
+        cursor = connection.cursor(dictionary=True)
         cursor.execute(query, params or ())
         result = cursor.fetchall()
         return result
