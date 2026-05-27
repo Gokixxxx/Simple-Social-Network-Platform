@@ -190,7 +190,7 @@ def rollback_transaction(connection: MySQLConnection) -> bool:
         if connection.is_connected():
             connection.close()
             logger.debug("Database connection closed after rollback.")
-# ====================  execute_transaction 函数 ====================
+
 def execute_transaction(operations: List[Tuple[str, Optional[Tuple]]]) -> bool:
     """
     批量执行多个SQL操作的事务函数（兼容原有代码调用）

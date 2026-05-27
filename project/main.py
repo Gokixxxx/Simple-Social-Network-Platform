@@ -10,6 +10,8 @@ from datetime import datetime
 import mysql.connector
 from mysql.connector import Error
 
+import logging
+
 from backend.user_manager import (
     register_user, login_user, get_user_profile, update_user_profile,
     search_users, add_friend, remove_friend, get_friends_list, update_friend_group
@@ -22,6 +24,9 @@ from backend.admin_manager import (
     login_admin, get_admin_profile, update_admin_profile,
     get_all_users, delete_user_by_admin, get_all_moments_for_review, delete_moment_by_admin
 )
+
+# debug
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 class mySocialNetwork:
