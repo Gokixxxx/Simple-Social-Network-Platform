@@ -26,5 +26,4 @@ __pycache__/
 *.pdf
 
 # instructor and test
-instructor.md
 test_sample.md
