@@ -163,8 +163,8 @@ def add_comment(moment_id, user_id, content):
     返回: {'success': True/False, 'message': '...', 'comment_id': int}
     """
 
-    if len(content) > 500:
-        return {"success": False, "message": "Content exceeds the maximum length of 500 characters."}
+    if len(content) > 255:
+        return {"success": False, "message": "Content exceeds the maximum length of 255 characters."}
 
     query = "INSERT INTO comments (moment_id, user_id, content) VALUES (%s, %s, %s)"
     try:
