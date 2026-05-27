@@ -27,7 +27,7 @@ from backend.admin_manager import (
 
 # debug
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+logger = logging.getLogger(__name__)
 
 class mySocialNetwork:
     """main class"""
@@ -41,9 +41,9 @@ class mySocialNetwork:
     
     def print_header(self):
         """header"""
-        print("*" * 70)
-        print(" " * 10 + "Simple Social Network Platform - By Hou & Gong")
-        print("*" * 70)
+        print("*" * 80)
+        print(" " * 10 + "Simple Social Network Platform - By Group_15 (0153 & 0233)")
+        print("*" * 80)
         if self.current_user:
             role_str = "[ADMIN]" if self.current_user['role'] == 'admin' else "[USER]"
             print(f"You are {role_str}{self.current_user['username']} (ID: {self.current_user['id']})")
@@ -822,6 +822,8 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.getLogger().setLevel(logging.CRITICAL)
+
     try:
         main()
     except KeyboardInterrupt:
