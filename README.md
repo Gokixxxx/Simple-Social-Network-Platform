@@ -1,5 +1,7 @@
 # README.md
 
+模拟社交网络数据库。
+
 确保已安装 Python 3.10+，然后安装项目依赖：`pip install mysql-connector-python python-dotenv`。
 
 在项目根目录（即本 `README.md` 所在目录）创建 `.env` 文件 ：

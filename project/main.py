@@ -37,7 +37,7 @@ class mySocialNetwork:
     def print_header(self):
         """header"""
         print("*" * 80)
-        print(" " * 10 + "Simple Social Network Platform - By Hou Fanbo & Gong Xi")
+        print(" " * 10 + "Simple Social Network Platform - By Hou & Gong")
         print("*" * 80)
         if self.current_user:
             role_str = "[ADMIN]" if self.current_user['role'] == 'admin' else "[USER]"
