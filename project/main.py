@@ -36,9 +36,9 @@ class mySocialNetwork:
     
     def print_header(self):
         """header"""
-        print("*" * 80)
+        print("*" * 70)
         print(" " * 10 + "Simple Social Network Platform - By Hou & Gong")
-        print("*" * 80)
+        print("*" * 70)
         if self.current_user:
             role_str = "[ADMIN]" if self.current_user['role'] == 'admin' else "[USER]"
             print(f"You are {role_str}{self.current_user['username']} (ID: {self.current_user['id']})")
@@ -805,7 +805,7 @@ class mySocialNetwork:
             print(f"~>> {result['message']}")
         else:
             print(f"~> {result['message']}")
-        input("  按回车键返回...")
+        input("> press enter to return...")
 
 
 # ==================== entry ====================
