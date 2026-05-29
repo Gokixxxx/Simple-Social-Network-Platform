@@ -49,15 +49,22 @@ def update_moment(moment_id, user_id, new_content):
     修改朋友圈
     返回: {'success': True/False, 'message': '...'}
     """
-    query = "UPDATE moments SET content = %s WHERE moment_id = %s AND user_id = %s"
+    # 确认这条朋友圈存在，且是这个用户发的
+    check_query = "SELECT 1 FROM moments WHERE moment_id = %s AND user_id = %s"
+    existing_moment = execute_query(check_query, (moment_id, user_id))
+    
+    if not existing_moment or len(existing_moment) == 0:
+        return {"success": False, "message": "Moment not found or you do not have permission to edit it."}
+    # 显式追加 last_update_time = NOW()，强迫 MySQL 刷新时间戳
+    query = "UPDATE moments SET content = %s, last_update_time = NOW() WHERE moment_id = %s AND user_id = %s"
     try:
         result = execute_update(query, (new_content, moment_id, user_id))
-        if result > 0:
+        if result >= 0:
             logger.info(f"Moment ID {moment_id} updated successfully by user {user_id}.")
             return {"success": True, "message": "Moment updated successfully."}
         else:
             logger.info(f"Update canceled or unauthorized for moment ID {moment_id} by user {user_id}.")
-            return {"success": False, "message": "Moment not found or you do not have permission to edit it."}
+            return {"success": False, "message": "Failed to update moment. Please try again."}
     except Exception as e:
         logger.error(f"Error updating moment {moment_id} for user {user_id}: {e}")
         return {"success": False, "message": "Database error during moment update."}
@@ -88,12 +95,10 @@ def get_my_moments(user_id):
     返回: [{'moment_id': int, 'content': str, 'last_update_time': str, 'comment_count': int}, ... ]
     """
     query = """
-        SELECT m.moment_id, m.content, m.last_update_time, COUNT(c.comment_id) AS comment_count
-        FROM moments m
-        LEFT JOIN comments c ON m.moment_id = c.moment_id
-        WHERE m.user_id = %s
-        GROUP BY m.moment_id
-        ORDER BY m.last_update_time DESC
+        SELECT moment_id, content, last_update_time, comment_count
+        FROM moments
+        WHERE user_id = %s
+        ORDER BY last_update_time DESC
     """
     try:
         results = execute_query(query, (user_id,))
