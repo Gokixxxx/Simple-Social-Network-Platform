@@ -246,3 +246,16 @@ def update_friend_group(user_id, friend_id, new_group_name):
     except Exception as e:
         logger.error(f"Error updating friend group for user {user_id}, friend {friend_id}: {e}")
         return {"success": False, "message": "Database error during group modification."}
+    
+def get_minimal_user_directory():
+    """
+    获取极简版公开用户目录（严格限制仅含 user_id 和 username）
+    返回: [{'user_id': int, 'username': str}, ...]
+    """
+    query = "SELECT user_id, username FROM users"
+    try:
+        results = execute_query(query)
+        return results if results is not None else []
+    except Exception as e:
+        logger.error(f"Error fetching minimal user directory: {e}")
+        return []
