@@ -76,7 +76,7 @@ def create_tables():
         )
         """,
         
-        # 6. Create comments table (with Double Cascade Delete)
+       # 6. Create comments table (with Double Cascade Delete)
         """
         CREATE TABLE comments (
             comment_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -87,6 +87,30 @@ def create_tables():
             FOREIGN KEY (moment_id) REFERENCES moments(moment_id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
         )
+        """,
+        "DROP TRIGGER IF EXISTS after_comment_insert",
+        "DROP TRIGGER IF EXISTS after_comment_delete",
+        # 触发器：新增评论时，朋友圈评论数 + 1
+        """
+        CREATE TRIGGER after_comment_insert
+        AFTER INSERT ON comments
+        FOR EACH ROW
+        BEGIN
+            UPDATE moments 
+            SET comment_count = comment_count + 1 
+            WHERE moment_id = NEW.moment_id;
+        END
+        """,
+        # 触发器：删除评论时，朋友圈评论数 - 1
+        """
+        CREATE TRIGGER after_comment_delete
+        AFTER DELETE ON comments
+        FOR EACH ROW
+        BEGIN
+            UPDATE moments 
+            SET comment_count = GREATEST(0, comment_count - 1)  -- 使用 GREATEST 确保不会出现负数，增加安全性
+            WHERE moment_id = OLD.moment_id;
+        END
         """,
         
         # 7. Create view to calculate age dynamically
