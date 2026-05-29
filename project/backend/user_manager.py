@@ -168,6 +168,14 @@ def remove_friend(user_id, friend_id):
     删除好友（双向，使用事务）
     返回: {'success': True/False, 'message': '...'}
     """
+    # 检查好友关系是否存在
+    check_query = "SELECT 1 FROM friendships WHERE user_id = %s AND friend_id = %s"
+    existing = execute_query(check_query, (user_id, friend_id))
+    
+    if not existing or len(existing) == 0:
+        logger.info(f"Failed to remove friend: user {user_id} and user {friend_id} are not friends.")
+        return {"success": False, "message": "Friend not found. You are not friends with this user."}
+
     sql = "DELETE FROM friendships WHERE user_id = %s AND friend_id = %s"
     operations = [
         (sql, (user_id, friend_id)),
