@@ -10,11 +10,10 @@ from datetime import datetime
 import mysql.connector
 from mysql.connector import Error
 
-import logging
-
 from backend.user_manager import (
     register_user, login_user, get_user_profile, update_user_profile,
-    search_users, add_friend, remove_friend, get_friends_list, update_friend_group
+    search_users, add_friend, remove_friend, get_friends_list, update_friend_group,
+    get_minimal_user_directory
 )
 from backend.moment_manager import (
     post_moment, update_moment, delete_moment,
@@ -25,9 +24,6 @@ from backend.admin_manager import (
     get_all_users, delete_user_by_admin, get_all_moments_for_review, delete_moment_by_admin
 )
 
-# debug
-# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
 
 class mySocialNetwork:
     """main class"""
@@ -42,7 +38,7 @@ class mySocialNetwork:
     def print_header(self):
         """header"""
         print("*" * 80)
-        print(" " * 10 + "Simple Social Network Platform - By Group_15 (0153 & 0233)")
+        print(" " * 10 + "Simple Social Network Platform - By Hou Fanbo & Gong Xi")
         print("*" * 80)
         if self.current_user:
             role_str = "[ADMIN]" if self.current_user['role'] == 'admin' else "[USER]"
@@ -54,7 +50,7 @@ class mySocialNetwork:
     def get_input(self, prompt: str, required: bool = True) -> str:
         """get user input"""
         while True:
-            value = input(f"> {prompt} ").strip()
+            value = input(f"> {prompt}: ").strip()
             if value.lower() == 'q':
                 return None
             if not required or value:
@@ -280,24 +276,27 @@ class mySocialNetwork:
             self.clear_screen()
             self.print_header()
             print("\n  FRIENDS")
-            print("1. Search users")
-            print("2. Add friends")
-            print("3. View my friends")
-            print("4. Delete friends")
-            print("5. Modify friend groups")
+            print("1. View user directory") 
+            print("2. Search users")                  
+            print("3. Add friends")                   
+            print("4. View my friends")               
+            print("5. Delete friends")                
+            print("6. Modify friend groups")       
             print("0. Return")
-            
-            choice = self.get_input("\n> enter an integer(0-5): ")
-            
+
+            choice = self.get_input("\n> enter an integer(0-6): ") 
+
             if choice == '1':
-                self.handle_search_users()
+                self.handle_view_user_directory()    
             elif choice == '2':
-                self.handle_add_friend()
+                self.handle_search_users()
             elif choice == '3':
-                self.handle_view_friends()
+                self.handle_add_friend()
             elif choice == '4':
-                self.handle_remove_friend()
+                self.handle_view_friends()
             elif choice == '5':
+                self.handle_remove_friend()
+            elif choice == '6':
                 self.handle_update_friend_group()
             elif choice == '0':
                 break
@@ -305,6 +304,49 @@ class mySocialNetwork:
                 print("> Invaild input!")
                 input("> press enter to continue...")
     
+    def handle_view_user_directory(self):
+        """users"""
+        self.clear_screen()
+        print("\n" + "="*15 + " User Directory " + "="*15)
+
+        users = get_minimal_user_directory()
+        
+        if users:
+            print(f"{'ID':<10}{'Username':<20}")
+            print("-" * 35)
+            for u in users:
+                if u['user_id'] == self.current_user['id']:
+                    continue
+                print(f"{u['user_id']:<10}{u['username']:<20}")
+            print("-" * 35)
+        else:
+            print("  ~> No other users.")
+            
+        print("\n1. Enter ID to add friend")
+        print("2. Return")
+        choice = input("> Select operation (1-2): ").strip()
+        
+        if choice == '1':
+            friend_id = self.get_int_input("Please enter the user ID you want to add: ")
+            if friend_id:
+                if friend_id == self.current_user['id']:
+                    print("  > You cannot add yourself as a friend.")
+                else:
+                    group_name = self.get_input("> Please enter the name of the friend group: ", required=False)
+
+                    result = add_friend(
+                        self.current_user['id'], 
+                        friend_id,
+                        group_name if group_name else "默认分组" 
+                    )      
+                    if isinstance(result, dict) and 'message' in result:
+                        print(f"  >> {result['message']}")
+                    else:
+                        print("  >> Success.")
+            input("\n> press enter to continue...")
+        else:
+            return
+        
     def handle_search_users(self):
         """search users"""
         print("\n> Search users")
@@ -810,7 +852,7 @@ class mySocialNetwork:
             print(f"~>> {result['message']}")
         else:
             print(f"~> {result['message']}")
-        input("> press enter to return...")
+        input("  按回车键返回...")
 
 
 # ==================== entry ====================
@@ -822,8 +864,6 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.getLogger().setLevel(logging.CRITICAL)
-
     try:
         main()
     except KeyboardInterrupt:
