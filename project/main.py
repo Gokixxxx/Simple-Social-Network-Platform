@@ -50,7 +50,7 @@ class mySocialNetwork:
     def get_input(self, prompt: str, required: bool = True) -> str:
         """get user input"""
         while True:
-            value = input(f"> {prompt}: ").strip()
+            value = input(f"> {prompt} ").strip()
             if value.lower() == 'q':
                 return None
             if not required or value:
