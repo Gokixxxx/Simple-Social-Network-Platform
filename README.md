@@ -18,7 +18,7 @@ DB_NAME=social_network
 
 确保本地 MySQL 中已存在名为 `social_network` 的数据库。可以通过`mysql -u root -p`启动 MySQL 客户端，然后执行`SHOW DATABASES;`命令检查本地数据库。如不存在`social_network`，则需要先在客户端中创建，执行命令` CREATE DATABASE social_network CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; `。如果想要删除数据库，可以使用命令`DROP DATABASE social_network;`。
 
-使用时进入`/project`，先运行一次`create_tables.py`建表，然后运行`set_admin.py`初始化管理员，最后运行命令行前端`main.py`。
+使用时进入`/project`，先运行一次`create_table.py`建表，然后运行`set_admin.py`初始化管理员，最后运行命令行前端`main.py`。
 
 ![ER](./ER.png)
 
