@@ -9,7 +9,7 @@ def create_tables():
     statements = [
         # 1. Drop existing tables/views/triggers (in reverse order of dependencies)
         "DROP VIEW IF EXISTS UserProfileView",
-        "DROP TRIGGER IF EXISTS before_friendship_insert",  # 清理旧触发器
+        "DROP TRIGGER IF EXISTS before_friendship_insert",
         "DROP TABLE IF EXISTS comments",
         "DROP TABLE IF EXISTS moments",
         "DROP TABLE IF EXISTS friendships",
@@ -72,6 +72,7 @@ def create_tables():
             user_id INT,
             content VARCHAR(500) NOT NULL,
             last_update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            comment_count INT DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
         )
         """,
