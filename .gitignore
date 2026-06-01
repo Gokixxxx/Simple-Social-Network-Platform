@@ -25,5 +25,7 @@ __pycache__/
 # pdf
 *.pdf
 
-# instructor and test
+# tests
+test_sample.md
+instructor.md
 test_sample.md
