@@ -199,27 +199,18 @@ def get_friends_list(user_id, group_name=None):
     返回: [{'friend_id': int, 'username': str, 'name': str, 'group_name': str}, ...]
     """
     if group_name:
+        # 从视图里进行条件检索
         query = """
-        SELECT 
-            f.friend_id, 
-            u.username, 
-            IFNULL(u.name, 'N/A') AS name, 
-            IFNULL(f.group_name, '默认分组') AS group_name 
-        FROM friendships f 
-        JOIN users u ON f.friend_id = u.user_id 
-        WHERE f.user_id = %s AND f.group_name = %s
+        SELECT friend_id, username, name, group_name 
+        FROM DetailedFriendshipView 
+        WHERE user_id = %s AND group_name = %s
         """
         params = (user_id, group_name)
     else:
         query = """
-        SELECT 
-            f.friend_id, 
-            u.username, 
-            IFNULL(u.name, 'N/A') AS name, 
-            IFNULL(f.group_name, '默认分组') AS group_name 
-        FROM friendships f 
-        JOIN users u ON f.friend_id = u.user_id 
-        WHERE f.user_id = %s
+        SELECT friend_id, username, name, group_name 
+        FROM DetailedFriendshipView 
+        WHERE user_id = %s
         """
         params = (user_id,)
         
