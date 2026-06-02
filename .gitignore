@@ -29,3 +29,8 @@ __pycache__/
 test_sample.md
 instructor.md
 fixme.md
+
+# report
+./report
+report.*
+简易社交网络平台后端核心模块实现.*
