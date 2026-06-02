@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
 def create_tables():
-
     from backend.db_connection import execute_transaction
-    # Define all SQL operations in chronological order
+
     statements = [
-        # 1. Drop existing tables/views/triggers (in reverse order of dependencies)
+        # 1. 清理旧的视图、触发器和表
         "DROP VIEW IF EXISTS UserProfileView",
+        "DROP VIEW IF EXISTS DetailedFriendshipView",
+        "DROP VIEW IF EXISTS MomentsTimelineView",
         "DROP TRIGGER IF EXISTS before_friendship_insert",
+        "DROP TRIGGER IF EXISTS after_comment_insert",
+        "DROP TRIGGER IF EXISTS after_comment_delete",
         "DROP TABLE IF EXISTS comments",
         "DROP TABLE IF EXISTS moments",
         "DROP TABLE IF EXISTS friendships",
         "DROP TABLE IF EXISTS admins",
         "DROP TABLE IF EXISTS users",
         
-        # 2. Create users table
+        # 2. 创建用户表 (users)
         """
         CREATE TABLE users (
             user_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -28,7 +30,7 @@ def create_tables():
         )
         """,
         
-        # 3. Create admins table
+        # 3. 创建管理员表 (admins)
         """
         CREATE TABLE admins (
             admin_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -40,7 +42,7 @@ def create_tables():
         )
         """,
         
-        # 4. Create friendships table (with Cascade Delete)
+        # 4. 创建好友关系表 (friendships)
         """
         CREATE TABLE friendships (
             user_id INT,
@@ -52,7 +54,32 @@ def create_tables():
         )
         """,
         
-        # 【触发器】防止自己加自己好友
+        # 5. 创建朋友圈动态表 (moments)
+        """
+        CREATE TABLE moments (
+            moment_id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT,
+            content TEXT NOT NULL,
+            last_update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            comment_count INT DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+        )
+        """,
+        
+        # 6. 创建评论表 (comments)
+        """
+        CREATE TABLE comments (
+            comment_id INT PRIMARY KEY AUTO_INCREMENT,
+            moment_id INT,
+            user_id INT,
+            content TEXT NOT NULL,
+            comment_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (moment_id) REFERENCES moments(moment_id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+        )
+        """,
+        
+        # 7. 创建触发器：防止自己加自己为好友
         """
         CREATE TRIGGER before_friendship_insert
         BEFORE INSERT ON friendships
@@ -65,33 +92,7 @@ def create_tables():
         END
         """,
         
-        # 5. Create moments table (with Cascade Delete)
-        """
-        CREATE TABLE moments (
-            moment_id INT PRIMARY KEY AUTO_INCREMENT,
-            user_id INT,
-            content VARCHAR(500) NOT NULL,
-            last_update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            comment_count INT DEFAULT 0,
-            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-        )
-        """,
-        
-       # 6. Create comments table (with Double Cascade Delete)
-        """
-        CREATE TABLE comments (
-            comment_id INT PRIMARY KEY AUTO_INCREMENT,
-            moment_id INT,
-            user_id INT,
-            content VARCHAR(255) NOT NULL,
-            comment_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (moment_id) REFERENCES moments(moment_id) ON DELETE CASCADE,
-            FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-        )
-        """,
-        "DROP TRIGGER IF EXISTS after_comment_insert",
-        "DROP TRIGGER IF EXISTS after_comment_delete",
-        # 触发器：新增评论时，朋友圈评论数 + 1
+        # 8. 创建触发器：维护朋友圈评论数自增
         """
         CREATE TRIGGER after_comment_insert
         AFTER INSERT ON comments
@@ -102,19 +103,20 @@ def create_tables():
             WHERE moment_id = NEW.moment_id;
         END
         """,
-        # 触发器：删除评论时，朋友圈评论数 - 1
+        
+        # 9. 创建触发器：维护朋友圈评论数自减
         """
         CREATE TRIGGER after_comment_delete
         AFTER DELETE ON comments
         FOR EACH ROW
         BEGIN
             UPDATE moments 
-            SET comment_count = GREATEST(0, comment_count - 1)  -- 使用 GREATEST 确保不会出现负数，增加安全性
+            SET comment_count = GREATEST(0, comment_count - 1)
             WHERE moment_id = OLD.moment_id;
         END
         """,
         
-        # 7. Create view to calculate age dynamically
+        # 10. 【视图 1】用户个人公开信息视图，脱敏密码，动态计算年龄
         """
         CREATE VIEW UserProfileView AS
         SELECT 
@@ -123,7 +125,35 @@ def create_tables():
         FROM users
         """,
         
-        # 8. Initialize default admin user
+        # 11. 【视图 2】好友详细关系看板视图，封装 JOIN，统一处理空姓名与默认分组
+        """
+        CREATE VIEW DetailedFriendshipView AS
+        SELECT 
+            f.user_id AS user_id, 
+            f.friend_id AS friend_id, 
+            u.username AS username, 
+            IFNULL(u.name, 'N/A') AS name, 
+            IFNULL(f.group_name, '默认分组') AS group_name
+        FROM friendships f
+        JOIN users u ON f.friend_id = u.user_id
+        """,
+        
+        # 12. 【视图 3】朋友圈动态流看板视图，融合发布者信息，解耦上层流媒体逻辑
+        """
+        CREATE VIEW MomentsTimelineView AS
+        SELECT 
+            m.moment_id AS moment_id,
+            m.user_id AS author_id,
+            u.username AS author_username,
+            IFNULL(u.name, 'N/A') AS author_name,
+            m.content AS content,
+            m.last_update_time AS last_update_time,
+            m.comment_count AS comment_count
+        FROM moments m
+        JOIN users u ON m.user_id = u.user_id
+        """,
+        
+        # 13. 初始化默认超级管理员
         "INSERT INTO admins (admin_username, password, name) VALUES ('admin', 'admin123', 'Super Admin')"
     ]
     
