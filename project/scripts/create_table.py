@@ -116,29 +116,7 @@ def create_tables():
         END
         """,
         
-        # 10. 评论前权限检查,只有自己或好友能评论
-        """
-        CREATE TRIGGER before_comment_insert
-        BEFORE INSERT ON comments
-        FOR EACH ROW
-        BEGIN
-            DECLARE author_id INT;
-            DECLARE is_friend INT DEFAULT 0;
-
-            SELECT user_id INTO author_id FROM moments WHERE moment_id = NEW.moment_id;
-            IF NEW.user_id <> author_id THEN
-                SELECT COUNT(*) INTO is_friend 
-                FROM friendships 
-                WHERE user_id = NEW.user_id AND friend_id = author_id; 
-                IF is_friend = 0 THEN
-                    SIGNAL SQLSTATE '45000'
-                    SET MESSAGE_TEXT = 'Unauthorized to comment on this moment.';
-                END IF;
-            END IF;
-        END
-        """,
-        
-        # 11. 【视图 1】用户个人公开信息视图（脱敏密码，动态计算年龄）
+        # 10. 【视图 1】用户个人公开信息视图（脱敏密码，动态计算年龄）
         """
         CREATE VIEW UserProfileView AS
         SELECT 
@@ -147,7 +125,7 @@ def create_tables():
         FROM users
         """,
         
-        # 12. 【视图 2】好友详细关系看板视图（封装 JOIN，统一处理空姓名与默认分组）
+        # 11. 【视图 2】好友详细关系看板视图（封装 JOIN，统一处理空姓名与默认分组）
         """
         CREATE VIEW DetailedFriendshipView AS
         SELECT 
@@ -160,7 +138,7 @@ def create_tables():
         JOIN users u ON f.friend_id = u.user_id
         """,
         
-        # 13. 【视图 3】朋友圈动态流看板视图（融合发布者信息，解耦上层流媒体逻辑）
+        # 12. 【视图 3】朋友圈动态流看板视图（融合发布者信息，解耦上层流媒体逻辑）
         """
         CREATE VIEW MomentsTimelineView AS
         SELECT 
@@ -173,7 +151,7 @@ def create_tables():
             m.comment_count AS comment_count
         FROM moments m
         JOIN users u ON m.user_id = u.user_id
-        """,
+        """
     ]
     
     # Map statements to the tuple format required by execute_transaction: (sql, params)
