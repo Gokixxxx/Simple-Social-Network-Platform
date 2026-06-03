@@ -175,18 +175,49 @@ def get_friends_moments(user_id):
 
 def add_comment(moment_id, user_id, content):
     """
-    添加评论（严格限制只能给自己或者朋友的朋友圈评论）
+    发表评论（智能权限检查：只能给自己的或好友的朋友圈发评论）
+    返回: {'success': True/False, 'message': '...', 'comment_id': int/str}
     """
-    query = "INSERT INTO comments (moment_id, user_id, content) VALUES (%s, %s, %s)"
+    if not content:
+        return {"success": False, "message": "Comment content cannot be empty."}
     try:
-        result = execute_update(query, (moment_id, user_id, content))
-        if result > 0:
-            return {"success": True, "message": "Comment added successfully."}
-        else:
+        check_query = """
+            SELECT 
+                m.user_id AS author_id,
+                (m.user_id = %s OR EXISTS (
+                    SELECT 1 FROM friendships f 
+                    WHERE f.user_id = %s AND f.friend_id = m.user_id
+                )) AS can_comment
+            FROM moments m
+            WHERE m.moment_id = %s
+        """
+        check_result = execute_query(check_query, (user_id, user_id, moment_id))
+
+        if not check_result:
             return {"success": False, "message": "Failed to add comment. Target moment may not exist."}
+        if not check_result[0]['can_comment']:
+            return {"success": False, "message": "Unauthorized to comment on this moment."}
+
+        query = "INSERT INTO comments (moment_id, user_id, content) VALUES (%s, %s, %s)"
+        result = execute_update(query, (moment_id, user_id, content))
+        
+        if result > 0:
+            get_id_query = "SELECT comment_id FROM comments WHERE user_id = %s ORDER BY comment_id DESC LIMIT 1"
+            new_comment_record = execute_query(get_id_query, (user_id,))
+            
+            new_comment_id = new_comment_record[0]['comment_id'] if new_comment_record else "N/A"
+            
+            return {
+                "success": True, 
+                "message": "Comment added successfully.",
+                "comment_id": new_comment_id 
+            }
+        else:
+            return {"success": False, "message": "Failed to add comment."}      
     except Exception as e:
-        logger.error(f"Error adding comment: {e}")
-        return {"success": False, "message": "Unauthorized to comment on this moment."}
+        logger.error(f"Error adding comment on moment {moment_id} by user {user_id}: {e}")
+        return {"success": False, "message": "Database error while adding comment."}
+
 
 def delete_comment(comment_id, user_id):
     """
