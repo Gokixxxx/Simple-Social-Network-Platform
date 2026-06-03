@@ -175,26 +175,18 @@ def get_friends_moments(user_id):
 
 def add_comment(moment_id, user_id, content):
     """
-    对朋友圈添加评论
+    添加评论（严格限制只能给自己或者朋友的朋友圈评论）
     """
     query = "INSERT INTO comments (moment_id, user_id, content) VALUES (%s, %s, %s)"
     try:
         result = execute_update(query, (moment_id, user_id, content))
         if result > 0:
-            get_id_query = "SELECT comment_id FROM comments WHERE moment_id = %s AND user_id = %s ORDER BY comment_id DESC LIMIT 1"
-            new_comment_record = execute_query(get_id_query, (moment_id, user_id))
-            new_comment_id = new_comment_record[0]['comment_id']
-            
-            return {
-                "success": True, 
-                "message": "Comment added successfully.",
-                "comment_id": new_comment_id 
-            }
+            return {"success": True, "message": "Comment added successfully."}
         else:
             return {"success": False, "message": "Failed to add comment. Target moment may not exist."}
     except Exception as e:
-        logger.error(f"Error adding comment on moment {moment_id} by user {user_id}: {e}")
-        return {"success": False, "message": "Database error while adding comment."}
+        logger.error(f"Error adding comment: {e}")
+        return {"success": False, "message": "Unauthorized to comment on this moment."}
 
 def delete_comment(comment_id, user_id):
     """
