@@ -474,7 +474,7 @@ class mySocialNetwork:
             elif choice == '5':
                 self.handle_delete_moment()
             elif choice == '6':
-                self.handle_add_comment()
+                self.()
             elif choice == '7':
                 self.handle_delete_comment()
             elif choice == '0':
@@ -595,29 +595,24 @@ class mySocialNetwork:
         input("  > press enter to return...")
     
     def handle_add_comment(self):
-        """comment on mements"""
-        print("\n> Comment on mements")
+        """Comment on the moments"""
+        print("\n> Comment on moments")
         moment_id = self.get_int_input("> Please enter the ID of the moment you want to comment: ")
         if moment_id is None:
             return
-        
-        content = self.get_input("> Please enter the comment (maximum 255 words): ")
+        content = input("> Please enter the comment (maximum 255 words): ").strip()
         if not content:
+            print("> Comment cannot be empty.")
             return
-        
-        if len(content) > 255:
-            print("  > Word limit exceed.")
-            input("  > press enter to return...")
-            return
-        
+            
         result = add_comment(moment_id, self.current_user['id'], content)
-        
         if result['success']:
             print(f">> {result['message']}")
-            print(f"   comment ID: {result['comment_id']}")
+            print(f"   comment ID: {result.get('comment_id', 'N/A')}")
         else:
             print(f"> {result['message']}")
-        input("  > press enter to return...")
+        
+        input("> press enter to return...")
     
     def handle_delete_comment(self):
         """delete my comment"""
