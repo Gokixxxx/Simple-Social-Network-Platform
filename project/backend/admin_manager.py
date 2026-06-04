@@ -119,20 +119,8 @@ def get_all_moments_for_review(admin_id=None):
 
         for moment in moments:
             mid = moment['moment_id']
-            comment_query = """
-            SELECT 
-                c.comment_id, 
-                c.user_id AS commenter_id, 
-                u.username AS commenter_username,
-                IFNULL(u.name, u.username) AS commenter_name, 
-                c.content, 
-                c.comment_time 
-            FROM comments c
-            JOIN users u ON c.user_id = u.user_id
-            WHERE c.moment_id = %s
-            ORDER BY c.comment_time ASC
-            """
-            comments = execute_query(comment_query, (mid,))
+            comments = execute_query("SELECT * FROM CommentDetailsView WHERE moment_id = %s", (mid,))
+
             if comments:
                 for comment in comments:
                     if comment.get('comment_time'):
