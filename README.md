@@ -52,3 +52,4 @@ DB_NAME=social_network
       1. 查看所有帖子
       2. 删除帖子
    4. 管理员登出
+
