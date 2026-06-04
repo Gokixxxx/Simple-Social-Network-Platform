@@ -74,7 +74,6 @@ def delete_moment(moment_id, user_id):
 def get_my_moments(user_id):
     """
     获取当前用户自己的朋友圈列表
-    用 MomentsTimelineView 视图简化单表过滤
     """
     query = """
     SELECT 
@@ -96,20 +95,7 @@ def get_my_moments(user_id):
             
         for moment in moments:
             mid = moment['moment_id']
-            comment_query = """
-            SELECT 
-                c.comment_id, 
-                c.user_id AS commenter_id, 
-                u.username AS commenter_username,
-                IFNULL(u.name, u.username) AS commenter_name, 
-                c.content, 
-                c.comment_time 
-            FROM comments c
-            JOIN users u ON c.user_id = u.user_id
-            WHERE c.moment_id = %s
-            ORDER BY c.comment_time ASC
-            """
-            comments = execute_query(comment_query, (mid,))
+            comments = execute_query("SELECT * FROM CommentDetailsView WHERE moment_id = %s", (mid,))
             if comments:
                 for comment in comments:
                     if comment.get('comment_time'):
@@ -125,6 +111,7 @@ def get_my_moments(user_id):
 def get_friends_moments(user_id):
     """
     获取好友朋友圈动态流（含最后更新时间、发布者名称及评论详情）
+     “好友表 INNER JOIN 动态看板视图” 
     """
     query = """
     SELECT 
@@ -147,20 +134,7 @@ def get_friends_moments(user_id):
             
         for moment in moments:
             mid = moment['moment_id']
-            comment_query = """
-            SELECT 
-                c.comment_id, 
-                c.user_id AS commenter_id, 
-                u.username AS commenter_username,
-                IFNULL(u.name, u.username) AS commenter_name, 
-                c.content, 
-                c.comment_time 
-            FROM comments c
-            JOIN users u ON c.user_id = u.user_id
-            WHERE c.moment_id = %s
-            ORDER BY c.comment_time ASC
-            """
-            comments = execute_query(comment_query, (mid,))
+            comments = execute_query("SELECT * FROM CommentDetailsView WHERE moment_id = %s", (mid,))
             if comments:
                 for comment in comments:
                     if comment.get('comment_time'):
@@ -175,11 +149,12 @@ def get_friends_moments(user_id):
 
 def add_comment(moment_id, user_id, content):
     """
-    发表评论（智能权限检查：只能给自己的或好友的朋友圈发评论）
+    发表评论（只能给自己的或好友的朋友圈发评论）
     返回: {'success': True/False, 'message': '...', 'comment_id': int/str}
     """
     if not content:
         return {"success": False, "message": "Comment content cannot be empty."}
+
     try:
         check_query = """
             SELECT 
@@ -195,6 +170,7 @@ def add_comment(moment_id, user_id, content):
 
         if not check_result:
             return {"success": False, "message": "Failed to add comment. Target moment may not exist."}
+      
         if not check_result[0]['can_comment']:
             return {"success": False, "message": "Unauthorized to comment on this moment."}
 
@@ -213,11 +189,11 @@ def add_comment(moment_id, user_id, content):
                 "comment_id": new_comment_id 
             }
         else:
-            return {"success": False, "message": "Failed to add comment."}      
+            return {"success": False, "message": "Failed to add comment."}
+            
     except Exception as e:
         logger.error(f"Error adding comment on moment {moment_id} by user {user_id}: {e}")
         return {"success": False, "message": "Database error while adding comment."}
-
 
 def delete_comment(comment_id, user_id):
     """
