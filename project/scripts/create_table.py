@@ -3,9 +3,10 @@
 
 def create_tables():
     from backend.db_connection import execute_transaction
-
+    
+    # 按照依赖关系的倒序，定义所有的 SQL 操作
     statements = [
-        # 1. 清理旧的视图、触发器和表
+        # 1. 清理旧的视图、触发器和表（必须先删视图，再删原表）
         "DROP VIEW IF EXISTS UserProfileView",
         "DROP VIEW IF EXISTS DetailedFriendshipView",
         "DROP VIEW IF EXISTS MomentsTimelineView",
@@ -118,6 +119,8 @@ def create_tables():
         """,
         
         # 10. 【视图 1】用户个人公开信息视图（脱敏密码，动态计算年龄）
+        # 使用场景：user_manager.py → get_user_profile()（用户查看自己的个人信息）
+        #          admin_manager.py → get_all_users()（管理员查看所有用户列表）
         """
         CREATE VIEW UserProfileView AS
         SELECT 
@@ -127,6 +130,7 @@ def create_tables():
         """,
         
         # 11. 【视图 2】好友详细关系看板视图（封装 JOIN，统一处理空姓名与默认分组）
+        # user_manager.py → get_friends_list()（获取用户的好友列表，支持按分组筛选）
         """
         CREATE VIEW DetailedFriendshipView AS
         SELECT 
@@ -140,6 +144,9 @@ def create_tables():
         """,
         
         # 12. 【视图 3】朋友圈动态流看板视图（融合发布者信息，解耦上层流媒体逻辑）
+        # moment_manager.py → get_my_moments()（用户查看自己的朋友圈）
+        # moment_manager.py → get_friends_moments()（用户查看好友的朋友圈）
+        # admin_manager.py → get_all_moments_for_review()（管理员查看全网朋友圈）
         """
         CREATE VIEW MomentsTimelineView AS
         SELECT 
@@ -152,9 +159,12 @@ def create_tables():
             m.comment_count AS comment_count
         FROM moments m
         JOIN users u ON m.user_id = u.user_id
-        """，
-        
+        """,
+
         # 13. 【视图4】评论详情统一视图
+        # moment_manager.py → get_my_moments()
+        # moment_manager.py → get_friends_moments()
+        # admin_manager.py → get_all_moments_for_review()
         """
         CREATE VIEW CommentDetailsView AS
         SELECT 
@@ -168,7 +178,10 @@ def create_tables():
         FROM comments c
         JOIN users u ON c.user_id = u.user_id
         ORDER BY c.comment_time ASC
-        """
+        """,
+
+        # 14. 初始化默认超级管理员
+        "INSERT INTO admins (admin_username, password, name) VALUES ('admin', 'admin123', 'Super Admin')"
     ]
     
     # Map statements to the tuple format required by execute_transaction: (sql, params)
