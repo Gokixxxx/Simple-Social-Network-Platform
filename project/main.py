@@ -474,7 +474,7 @@ class mySocialNetwork:
             elif choice == '5':
                 self.handle_delete_moment()
             elif choice == '6':
-                self.()
+                self.handle_add_comment()
             elif choice == '7':
                 self.handle_delete_comment()
             elif choice == '0':
@@ -846,7 +846,7 @@ class mySocialNetwork:
             print(f"~>> {result['message']}")
         else:
             print(f"~> {result['message']}")
-        input("  按回车键返回...")
+        input("> press enter to return...")
 
 
 # ==================== entry ====================

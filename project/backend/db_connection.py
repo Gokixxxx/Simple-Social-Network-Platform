@@ -62,7 +62,7 @@ def close_connection(connection):
         except MySQLError as e:
             logger.error(f"Error while closing the connection: {e}")
 
-def execute_query(query: str, params: tuple = None) -> list[dict] | None: # 提示: 返回类型注解可改为 list[dict]
+def execute_query(query: str, params: tuple = None) -> list[dict] | None:
     """
     Manager call: executing SELECT operation.
     ...
