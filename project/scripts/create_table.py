@@ -9,6 +9,7 @@ def create_tables():
         "DROP VIEW IF EXISTS UserProfileView",
         "DROP VIEW IF EXISTS DetailedFriendshipView",
         "DROP VIEW IF EXISTS MomentsTimelineView",
+        "DROP VIEW IF EXISTS CommentDetailsView",
         "DROP TRIGGER IF EXISTS before_friendship_insert",
         "DROP TRIGGER IF EXISTS after_comment_insert",
         "DROP TRIGGER IF EXISTS after_comment_delete",
@@ -151,6 +152,22 @@ def create_tables():
             m.comment_count AS comment_count
         FROM moments m
         JOIN users u ON m.user_id = u.user_id
+        """，
+        
+        # 13. 【视图4】评论详情统一视图
+        """
+        CREATE VIEW CommentDetailsView AS
+        SELECT 
+            c.comment_id,
+            c.moment_id,
+            c.user_id AS commenter_id,
+            u.username AS commenter_username,
+            IFNULL(u.name, u.username) AS commenter_name,
+            c.content,
+            c.comment_time
+        FROM comments c
+        JOIN users u ON c.user_id = u.user_id
+        ORDER BY c.comment_time ASC
         """
     ]
     
